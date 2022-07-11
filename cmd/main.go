@@ -3,6 +3,7 @@ package main
 import (
 	"accounts-api/api"
 	"accounts-api/datasource"
+	"accounts-api/pkg/auth"
 	"accounts-api/pkg/user"
 	"accounts-api/services"
 	"fmt"
@@ -15,9 +16,13 @@ func main() {
 
 	var repository user.Repository
 	var service user.Service
+	var encryptService *services.PasswordEncrypt
+	var authService auth.Service
 
 	repository = datasource.NewMKVDatabase()
 	service = services.NewUserService(repository)
+	encryptService = services.NewPasswordEncrypt(14)
+	authService = services.NewAuthService(&repository, encryptService)
 
 	app := fiber.New()
 
@@ -29,6 +34,7 @@ func main() {
 	})
 
 	api.UserRouter(v1, service)
+	api.AuthRouter(v1, authService)
 
 	err := app.Listen(":3030")
 	if err != nil {
